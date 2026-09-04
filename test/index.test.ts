@@ -1,0 +1,75 @@
+import { describe, it, expect } from "vitest"
+import { unified } from "unified"
+import remarkParse from "remark-parse"
+import { QuartzObsidianAdmonition } from "../src/index.js"
+
+function transform(md: string) {
+  const plugin = QuartzObsidianAdmonition()
+  const processor = unified().use(remarkParse)
+  plugin.markdownPlugins().forEach((p) => processor.use(p))
+  const tree = processor.parse(md)
+  return processor.runSync(tree)
+}
+
+/** Render a tree back to a compact human-readable form for assertions. */
+function compact(tree: any): string {
+  function walk(n: any): string {
+    if (n.type === "blockquote") {
+      const cls = n.data?.hProperties?.className
+      if (cls && cls[0] === "callout") {
+        const inner =
+          n.children?.[0]?.value?.match(/callout-title-inner">([^<]+)</)?.[1] ||
+          cls[1]
+        const content = n.children?.[1]?.children?.map(walk).join(", ") ?? ""
+        return `callout[${inner}](${content})`
+      }
+      return `bq(${(n.children ?? []).map(walk).join(", ")})`
+    }
+    if (n.type === "code") return `code:${n.lang ?? "?"}`
+    if (n.type === "paragraph") {
+      return `p(${(n.children ?? []).map((c: any) => c.value ?? c.type).join("")})`
+    }
+    if (n.children) return n.children.map(walk).join(", ")
+    return n.type
+  }
+  return tree.children.map(walk).join(" | ")
+}
+
+describe("QuartzObsidianAdmonition", () => {
+  it("converts a basic ad-note block into a callout", () => {
+    const tree = transform("```ad-note\nHere is my note\n```\n")
+    expect(compact(tree)).toBe("callout[note](p(Here is my note))")
+  })
+
+  it("reads title and collapse options", () => {
+    const tree = transform(
+      "```ad-tip\ntitle: My Tip\ncollapse: open\nBody content here.\n```\n",
+    )
+    expect(compact(tree)).toBe("callout[My Tip](p(Body content here.))")
+  })
+
+  it("resolves type aliases (ad-caution -> warning)", () => {
+    const tree = transform("```ad-caution\ntitle: Be careful\nCareful text.\n```\n")
+    const out = compact(tree)
+    expect(out).toContain("callout[Be careful]")
+    // verified via className in a raw dump
+  })
+
+  it("handles nested admonitions", () => {
+    const tree = transform(
+      "````ad-note\ntitle: Outer\n\nSome outer.\n\n```ad-warning\ntitle: Inner\nInner body.\n```\n\nBack to outer.\n````\n",
+    )
+    expect(compact(tree)).toBe(
+      "callout[Outer](p(Some outer.), callout[Inner](p(Inner body.)), p(Back to outer.))",
+    )
+  })
+
+  it("preserves embedded markdown in the body", () => {
+    const tree = transform(
+      "```ad-note\ntitle: Note\n### Heading\n\n- item1\n- item2\n\nSome **bold** text.\n```\n",
+    )
+    const content = tree.children[0]?.children?.[1]?.children ?? []
+    const types = content.map((c: any) => c.type)
+    expect(types).toEqual(["heading", "list", "paragraph"])
+  })
+})

@@ -1,0 +1,93 @@
+{
+  "name": "@quartz-community/obsidian-admonition",
+  "version": "0.1.0",
+  "description": "Quartz transformer plugin: convert Obsidian Admonition (```ad-<type>) code blocks into native Quartz callouts, with nested support.",
+  "type": "module",
+  "license": "MIT",
+  "author": "ForsakenDelusion",
+  "homepage": "https://github.com/ForsakenDelusion/quartz-obsidian-admonition",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ForsakenDelusion/quartz-obsidian-admonition.git"
+  },
+  "keywords": [
+    "quartz",
+    "quartz-plugin",
+    "quartz-transformer",
+    "obsidian",
+    "admonition",
+    "admonitions",
+    "callout"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm run test",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "@quartz-community/types": "^0.3.0"
+  },
+  "dependencies": {
+    "mdast-util-to-string": "^4.0.0",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.0.0"
+  },
+  "devDependencies": {
+    "@quartz-community/types": "^0.3.0",
+    "@types/mdast": "^4.0.4",
+    "@types/node": "^24.10.0",
+    "@types/unist": "^3.0.3",
+    "mdast-util-from-markdown": "^2.0.2",
+    "mdast-util-to-hast": "^13.2.0",
+    "remark-parse": "^11.0.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3",
+    "unified": "^11.0.5",
+    "vitest": "^2.1.9"
+  },
+  "engines": {
+    "node": ">=22",
+    "npm": ">=10.9.2"
+  },
+  "quartz": {
+    "name": "obsidian-admonition",
+    "displayName": "Obsidian Admonition",
+    "category": "transformer",
+    "version": "0.1.0",
+    "quartzVersion": ">=5.0.0",
+    "requiresInstall": true,
+    "dependencies": [],
+    "defaultOrder": 25,
+    "defaultEnabled": false,
+    "defaultOptions": {
+      "collapseIcon": true
+    },
+    "optionSchema": {
+      "collapseIcon": {
+        "type": "boolean"
+      }
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
