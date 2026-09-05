@@ -1,6 +1,6 @@
 {
   "name": "@quartz-community/obsidian-admonition",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Quartz transformer plugin: convert Obsidian Admonition (```ad-<type>) code blocks into native Quartz callouts, with nested support.",
   "type": "module",
   "license": "MIT",
@@ -73,7 +73,7 @@
     "name": "obsidian-admonition",
     "displayName": "Obsidian Admonition",
     "category": "transformer",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "quartzVersion": ">=5.0.0",
     "requiresInstall": true,
     "dependencies": [],
