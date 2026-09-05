@@ -2,6 +2,7 @@
 import { visit } from "unist-util-visit";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
+import remarkMath from "remark-math";
 var ADO_PREFIX = "ad-";
 var TYPE_ALIASES = {
   note: "note",
@@ -178,7 +179,7 @@ function buildCallout(langInfo, bodyValue, parse) {
 }
 function admonitionPlugin() {
   return (tree) => {
-    const parse = (src) => unified().use(remarkParse).parse(src);
+    const parse = (src) => unified().use(remarkParse).use(remarkMath).parse(src);
     visit(tree, "code", (node, index, parent) => {
       if (!parent || index === void 0) return;
       if (!node.lang || !node.lang.startsWith(ADO_PREFIX)) return;

@@ -72,4 +72,23 @@ describe("QuartzObsidianAdmonition", () => {
     const types = content.map((c: any) => c.type)
     expect(types).toEqual(["heading", "list", "paragraph"])
   })
+
+  it("converts inline LaTeX ($...$) into inlineMath nodes", () => {
+    const tree = transform(
+      "```ad-note\n那么$n1 \\times n2$:\n\n- a\n```\n",
+    )
+    const content = tree.children[0]?.children?.[1]?.children ?? []
+    const para = content.find((c: any) => c.type === "paragraph")
+    const types = (para?.children ?? []).map((c: any) => c.type)
+    expect(types).toContain("inlineMath")
+  })
+
+  it("converts display LaTeX ($$...$$) into math nodes", () => {
+    const tree = transform(
+      "```ad-note\n$$\nE = mc^2\n$$\n```\n",
+    )
+    const content = tree.children[0]?.children?.[1]?.children ?? []
+    const types = content.map((c: any) => c.type)
+    expect(types).toContain("math")
+  })
 })

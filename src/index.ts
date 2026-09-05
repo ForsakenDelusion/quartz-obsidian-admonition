@@ -1,11 +1,12 @@
 import { visit } from "unist-util-visit"
 import { unified } from "unified"
 import remarkParse from "remark-parse"
+import remarkMath from "remark-math"
 import type { Root, Content, Code, Parent, Node } from "mdast"
 import type { BuildCtx } from "@quartz-community/types"
 
 // ============================================================================
-// Quartz Obsidian Admonition (v0.1.0)
+// Quartz Obsidian Admonition (v0.1.1)
 //
 // A Quartz v5 transformer plugin that converts Obsidian Admonition syntax
 // (```ad-<type> code blocks) into native Quartz/Obsidian callout blocks. It
@@ -15,8 +16,9 @@ import type { BuildCtx } from "@quartz-community/types"
 //
 // Nested admonitions are supported by increasing the number of backticks,
 // matching the original Obsidian Admonition plugin behaviour. The plugin
-// re-parses the inner body with remark-parse so that embedded markdown
-// (headings, lists, bold) renders correctly inside the callout.
+// re-parses the inner body with remark-parse (+ remark-math) so that embedded
+// markdown (headings, lists, bold) AND LaTeX ($...$, $$...$$) render correctly
+// inside the callout.
 // ============================================================================
 
 const ADO_PREFIX = "ad-"
@@ -283,7 +285,11 @@ function buildCallout(
  */
 function admonitionPlugin() {
   return (tree: Root) => {
-    const parse = (src: string) => unified().use(remarkParse).parse(src) as Root
+    // Re-parse embedded markdown WITH remark-math so that $...$ / $$...$$
+    // inside an admonition body are converted to inlineMath/displayMath nodes
+    // (which Quartz's Latex plugin then renders via KaTeX/MathJax).
+    const parse = (src: string) =>
+      unified().use(remarkParse).use(remarkMath).parse(src) as Root
     visit(tree, "code", (node: Code, index, parent) => {
       if (!parent || index === undefined) return
       if (!node.lang || !node.lang.startsWith(ADO_PREFIX)) return
