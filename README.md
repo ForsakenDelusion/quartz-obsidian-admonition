@@ -75,7 +75,7 @@ Body content here.
 Admonitions nest by using a **different number of backticks** at each level.
 The outer fence uses more backticks than the inner one.
 
-````md
+`````md
 ````ad-note
 title: Outer
 
@@ -88,7 +88,7 @@ Inner content.
 
 Back to outer.
 ````
-````
+`````
 
 ### Supported types & aliases
 
