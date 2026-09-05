@@ -129,9 +129,31 @@ function parseAdmonitionText(value, parse) {
   flush(buf, parse, nodes);
   return nodes;
 }
+function downgradeHeading(node) {
+  const children = node.children ?? [];
+  const level = Number(node.depth) || 3;
+  return {
+    type: "paragraph",
+    data: {
+      hProperties: {
+        className: ["admonition-heading", "admonition-heading-" + level]
+      },
+      hName: "div"
+    },
+    children
+  };
+}
+function downgradeHeadings(tree) {
+  visit(tree, "heading", (node, index, parent) => {
+    if (!parent || index === void 0) return;
+    const replacement = downgradeHeading(node);
+    parent.children.splice(index, 1, replacement);
+  });
+}
 function flush(buf, parse, nodes) {
   if (!buf.trim()) return;
   const tree = parse(buf);
+  downgradeHeadings(tree);
   nodes.push(...tree.children);
 }
 function buildCallout(langInfo, bodyValue, parse) {
@@ -188,11 +210,29 @@ function admonitionPlugin() {
     });
   };
 }
+var ADMONITION_HEADING_CSS = `
+.callout .admonition-heading {
+  margin: 0.75em 0 0.35em 0;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.callout .admonition-heading-1 { font-size: 1.6em; }
+.callout .admonition-heading-2 { font-size: 1.35em; }
+.callout .admonition-heading-3 { font-size: 1.15em; }
+.callout .admonition-heading-4 { font-size: 1.05em; }
+.callout .admonition-heading-5 { font-size: 1.0em; }
+.callout .admonition-heading-6 { font-size: 0.95em; }
+`;
 function QuartzObsidianAdmonition(_opts) {
   return {
     name: "QuartzObsidianAdmonition",
     markdownPlugins() {
       return [admonitionPlugin];
+    },
+    externalResources() {
+      return {
+        css: [{ content: ADMONITION_HEADING_CSS }]
+      };
     }
   };
 }

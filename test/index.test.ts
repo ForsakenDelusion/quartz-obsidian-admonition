@@ -64,13 +64,16 @@ describe("QuartzObsidianAdmonition", () => {
     )
   })
 
-  it("preserves embedded markdown in the body", () => {
+  it("preserves embedded markdown in the body (heading downgraded, list/paragraph kept)", () => {
     const tree = transform(
       "```ad-note\ntitle: Note\n### Heading\n\n- item1\n- item2\n\nSome **bold** text.\n```\n",
     )
     const content = tree.children[0]?.children?.[1]?.children ?? []
     const types = content.map((c: any) => c.type)
-    expect(types).toEqual(["heading", "list", "paragraph"])
+    // The heading is downgraded to a paragraph (admonition-heading), list + paragraph kept
+    expect(types).toEqual(["paragraph", "list", "paragraph"])
+    // The first node carries the admonition-heading class
+    expect(content[0]?.data?.hProperties?.className).toContain("admonition-heading")
   })
 
   it("converts inline LaTeX ($...$) into inlineMath nodes", () => {
@@ -90,5 +93,36 @@ describe("QuartzObsidianAdmonition", () => {
     const content = tree.children[0]?.children?.[1]?.children ?? []
     const types = content.map((c: any) => c.type)
     expect(types).toContain("math")
+  })
+
+  it("downgrades headings in the admonition body to non-heading nodes", () => {
+    const tree = transform(
+      "```ad-note\n### A heading inside\nSome text.\n```\n",
+    )
+    const content = tree.children[0]?.children?.[1]?.children ?? []
+    // The heading must NOT be a "heading" node anymore
+    const nodeTypes = content.map((c: any) => c.type)
+    expect(nodeTypes).not.toContain("heading")
+    // It should now be a paragraph with the admonition-heading class
+    const headingLike = content.find((c: any) =>
+      c.data?.hProperties?.className?.includes("admonition-heading"),
+    )
+    expect(headingLike).toBeDefined()
+    expect(headingLike.type).toBe("paragraph")
+  })
+
+  it("does not produce heading nodes that a TableOfContents visit would collect", () => {
+    const tree = transform(
+      "```ad-note\n### Heading inside admonition\n```\n\n## Real page heading\n",
+    )
+    // Simulate the TOC transformer: visit(tree, "heading")
+    let tocHeadings = 0
+    const visit = (node: any, cb: (n: any) => void) => {
+      if (node.type === "heading") cb(node)
+      if (node.children) node.children.forEach((c: any) => visit(c, cb))
+    }
+    visit(tree, () => tocHeadings++)
+    // Only the REAL page heading should be collected; admonition one is downgraded
+    expect(tocHeadings).toBe(1)
   })
 })

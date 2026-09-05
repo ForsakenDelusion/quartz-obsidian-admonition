@@ -211,10 +211,44 @@ function parseAdmonitionText(
   return nodes
 }
 
+/**
+ * Convert any `heading` mdast node into a paragraph that is visually styled like
+ * a heading via the `.admonition-heading` class, but whose mdast `type` is NOT
+ * `"heading"`. This keeps the Quartz TableOfContents transformer (which does
+ * `visit(tree, "heading", ...)`) from picking it up, while preserving the
+ * inline markdown children (bold, links, etc.) and a heading-like appearance.
+ */
+function downgradeHeading(node: any): Content {
+  // Preserve all inline children (text, emphasis, strong, links, etc.)
+  const children = node.children ?? []
+  const level = Number(node.depth) || 3
+  return {
+    type: "paragraph",
+    data: {
+      hProperties: {
+        className: ["admonition-heading", "admonition-heading-" + level],
+      },
+      hName: "div",
+    },
+    children,
+  } as unknown as Content
+}
+
+/** Recursively convert heading nodes found in a parsed body subtree. */
+function downgradeHeadings(tree: Root): void {
+  visit(tree, "heading", (node, index, parent) => {
+    if (!parent || index === undefined) return
+    const replacement = downgradeHeading(node)
+    parent.children.splice(index, 1, replacement)
+  })
+}
+
 /** Flush buffered plain-markdown text into parsed mdast nodes. */
 function flush(buf: string, parse: (src: string) => Root, nodes: Array<Content>): void {
   if (!buf.trim()) return
   const tree = parse(buf)
+  // Downgrade headings -> .admonition-heading so they don't leak into the TOC.
+  downgradeHeadings(tree)
   nodes.push(...tree.children)
 }
 
@@ -302,6 +336,25 @@ function admonitionPlugin() {
 }
 
 /**
+ * CSS injected globally so `.admonition-heading` renders with a heading-like
+ * size/weight even though it is not a real `heading` element (so it is exempt
+ * from the TableOfContents).
+ */
+const ADMONITION_HEADING_CSS = `
+.callout .admonition-heading {
+  margin: 0.75em 0 0.35em 0;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.callout .admonition-heading-1 { font-size: 1.6em; }
+.callout .admonition-heading-2 { font-size: 1.35em; }
+.callout .admonition-heading-3 { font-size: 1.15em; }
+.callout .admonition-heading-4 { font-size: 1.05em; }
+.callout .admonition-heading-5 { font-size: 1.0em; }
+.callout .admonition-heading-6 { font-size: 0.95em; }
+`
+
+/**
  * Configurable plugin entry point.
  */
 export function QuartzObsidianAdmonition(
@@ -309,11 +362,17 @@ export function QuartzObsidianAdmonition(
 ): {
   name: string
   markdownPlugins: (ctx: BuildCtx) => Array<() => (tree: Root) => void>
+  externalResources?: (ctx: BuildCtx) => { css: Array<{ content: string }> }
 } {
   return {
     name: "QuartzObsidianAdmonition",
     markdownPlugins() {
       return [admonitionPlugin]
+    },
+    externalResources() {
+      return {
+        css: [{ content: ADMONITION_HEADING_CSS }],
+      }
     },
   }
 }
