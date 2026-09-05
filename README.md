@@ -109,6 +109,72 @@ These map to the original Admonition plugin types:
 | example | — |
 | quote | cite |
 
+## LaTeX / Math support
+
+The plugin re-parses admonition bodies with **remark-math**, so inline math
+(`$...$`) and display math (`$$...$$`) inside an admonition are converted into
+`math` nodes and rendered by Quartz's LaTeX plugin (KaTeX/MathJax) — exactly
+like math in regular note text.
+
+### Requirements
+
+1. **Enable the Quartz LaTeX plugin** in `quartz.config.yaml` (it ships with
+   Quartz, `@quartz-community/latex`, `enabled: true`). The admonition plugin
+   only converts `$...$` into `math` nodes; the LaTeX plugin does the actual
+   rendering.
+2. **`remark-math` must be resolvable from your Quartz project root.** Because
+   plugins cloned via `github:` are installed into `.quartz/plugins/` and do
+   **not** install their own dependencies automatically, the module lookup walks
+   up to your project's `node_modules`. **Add `remark-math` as a root
+   dependency** of your Quartz project:
+
+   ```bash
+   npm install remark-math@6.0.0
+   ```
+
+   This is required for both local builds and CI (`npm ci` reads package-lock.json).
+
+### Syntax
+
+Inline math and display math work exactly as in regular notes:
+
+````md
+```ad-note
+The dimension is $n_1 \times n_2$.
+```
+````
+
+````md
+```ad-note
+$$
+E = mc^2
+$$
+```
+````
+
+### Notes / pitfalls
+
+- **`$$...$$` must be a block on its own.** remark-math only recognizes
+  display math when the `$$` delimiters sit on their own lines (with blank-line
+  boundaries). A single-line `$$E = mc^2$$` is treated as plain text. Write it
+  as:
+  ```md
+  $$
+  E = mc^2
+  $$
+  ```
+- **`$...$` requires the LaTeX engine to be configured** (`renderEngine: katex`
+  or `mathjax` in the `@quartz-community/latex` plugin options). The default is
+  `katex`.
+- **Update the plugin to get math support.** If you installed an earlier
+  version (before v0.1.1), `quartz.lock.json` still points to the old commit.
+  Refresh it with:
+
+  ```bash
+  npx quartz plugin install --latest
+  ```
+
+
 ## Development
 
 ```bash
