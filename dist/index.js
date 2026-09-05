@@ -231,7 +231,7 @@ function QuartzObsidianAdmonition(_opts) {
     },
     externalResources() {
       return {
-        css: [{ content: ADMONITION_HEADING_CSS }]
+        css: [{ content: ADMONITION_HEADING_CSS, inline: true }]
       };
     }
   };

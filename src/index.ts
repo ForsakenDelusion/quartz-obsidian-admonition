@@ -371,7 +371,7 @@ export function QuartzObsidianAdmonition(
     },
     externalResources() {
       return {
-        css: [{ content: ADMONITION_HEADING_CSS }],
+        css: [{ content: ADMONITION_HEADING_CSS, inline: true }],
       }
     },
   }
